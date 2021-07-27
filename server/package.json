@@ -1,0 +1,26 @@
+{
+  "name": "ds-tracks-player-server",
+  "version": "1.0.0",
+  "description": "",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon . -i db.json"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@discordjs/opus": "^0.5.3",
+    "audio-loader": "^1.0.3",
+    "axios": "^0.21.1",
+    "bcrypt": "^5.0.1",
+    "cookie-parser": "^1.4.5",
+    "discord.js": "^12.5.3",
+    "dotenv-safe": "^8.2.0",
+    "express": "^4.17.1",
+    "get-audio-duration": "^2.0.3",
+    "got": "^11.8.2",
+    "jsonwebtoken": "^8.5.1",
+    "socket.io": "^4.1.3"
+  }
+}
