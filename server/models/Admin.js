@@ -1,5 +1,5 @@
 const DBHelper = require('../helpers/DBHelper');
-const db = DBHelper.getDB(process.env.DB_TYPE);
+const db = DBHelper.getDB();
 const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 

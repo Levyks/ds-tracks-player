@@ -16,15 +16,16 @@ const getExtension = (filename) => {
   return filename[filename.length - 1];
 }
 
-const downloadTrack = (url) => {
-  const timestamp = Date.now();
-  
+const downloadTrack = (url, guildId, trackId) => {
   return axios.get(url, {responseType: 'stream' }).then(response => {
 
     const originalFilename = getFilename(response.headers['content-disposition']);
     const extension = getExtension(originalFilename);
 
-    const filepath = `./temp/${timestamp}.${extension}`;
+    const path = `./tracks/${guildId}`;
+    const filepath = `${path}/${trackId}.${extension}`;
+
+    fs.mkdirSync(path, { recursive: true });
 
     const writer = fs.createWriteStream(`${filepath}`);
     const stream = response.data.pipe(writer);
@@ -38,20 +39,35 @@ const downloadTrack = (url) => {
   });
 }
 
-const fetchTrackDuration = (url) => {
+const fetchTrackDuration = (url, guildId, trackId) => {
   if(!url) return false;
-  return downloadTrack(url).then(filepath => {
+  return downloadTrack(url, guildId, trackId).then(filepath => {
     return loadAudio(filepath).then( buffer => {
-      fs.unlink(filepath, () => {});
-      return buffer.duration;
+      if(process.env.CACHE_TRACKS != 'true') fs.unlink(filepath, () => {});
+      return {duration: buffer.duration, filepath};
     });
   }).catch(err => {
     return false;
   });
 }
 
-
 module.exports = {
   fetchTrackDuration,
   downloadTrack
+}
+
+if(process.env.CACHE_TRACKS == 'true') {
+  const DBHelper = require('../helpers/DBHelper');
+  const db = DBHelper.getDB();
+  
+  db.get('guilds').then(guilds => {
+    Object.values(guilds).forEach(guild => {
+      Object.values(guild.tracks).forEach(track => {
+        downloadTrack(track.url, guild.id, track.id).then(filepath => {
+          guilds[guild.id].tracks[track.id].filepath = filepath;
+          db.set('guilds', guilds);
+        });
+      });
+    });
+  });
 }

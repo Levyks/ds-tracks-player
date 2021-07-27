@@ -9,6 +9,7 @@
   let isLoading = true;
   let guild;
   let voiceChannels = [];
+  let connectedChannel;
 
   socket = io();
 
@@ -16,6 +17,10 @@
     if(response.status === 401) {
       navigate('/login');     
     }
+  });
+
+  socket.on('connectedChannelSync', channelId => {
+    connectedChannel = channelId;
   });
 
   axios.get(`${__app['env'].API_URL}/auth/check`).catch(error => { 
@@ -63,8 +68,8 @@
     socket.emit('playTrack', {id: guild.tracks[index].id});
   }
 
-  function handleVcChange(e) {
-    socket.emit('joinVc',{id: e.target.value});
+  $: {
+    if(connectedChannel) socket.emit('joinVc', {id: connectedChannel});
   }
 
 </script>
@@ -78,7 +83,7 @@
       <div class="vcs-wrapper">
         <div class="form-group">
           <label for="username">Connected Channel</label>
-          <select class="custom-select" id="username" on:change={handleVcChange}>
+          <select class="custom-select" id="username" bind:value={connectedChannel}>
             <option value="" selected>None (disconnected)</option>
             <option disabled>-------------------</option>
             {#each voiceChannels as vc}

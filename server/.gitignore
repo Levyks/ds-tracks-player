@@ -1,3 +1,5 @@
 node_modules/
+tracks/
 .env
 db.json
+db-backup.json

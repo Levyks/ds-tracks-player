@@ -27,9 +27,6 @@ const getAllGuildsFormatted = () => {
   return guildsFormatted;
 };
 
-const connections = {};
-const dispatchers = {};
-
 const getVoiceChannelsFromGuild = (id) => {
   const guild = client.guilds.cache.get(id);
   if(!guild) return false;
@@ -45,21 +42,25 @@ const getVoiceChannelsFromGuild = (id) => {
   
 }
 
+guildsStates = {};
+
 const joinVoiceChannelFromId = (id, guildId = false) => {
   const channel = client.channels.cache.get(id);
 
-  if(!channel || (guildId && channel.guild.id !== guildId)) return false;
+  if(!channel || (guildId && channel.guild.id !== guildId)) return Promise.resolve(false);
 
-  channel.join().then(connection => {
-    connections[channel.guild.id] = connection;
+  return channel.join().then(connection => {
+    if(!guildsStates[channel.guild.id]) guildsStates[channel.guild.id] = {};
+    guildsStates[channel.guild.id].connection = connection;
+    return true;
   });
 }
 
 const playTrackInGuild = (track, guildId, onStart = () => {}, onFinish = () => {}) => {
 
-  if(!connections[guildId]) return false;
+  if(!guildsStates[guildId] || !guildsStates[guildId].connection) return false;
 
-  const dispatcher = connections[guildId].play(track.url);
+  const dispatcher = guildsStates[guildId].connection.play(track.filepath || track.url);
   
   dispatcher.track = track;
   dispatcher.guildId = guildId;
@@ -67,18 +68,59 @@ const playTrackInGuild = (track, guildId, onStart = () => {}, onFinish = () => {
   dispatcher.on('start', onStart );
   
   dispatcher.on('finish', onFinish );
-  
+  dispatcher.on('finish', () => {
+    guildsStates[guildId].status = "finished";
+  } );
 
   dispatcher.on('error', console.error);
 
-  dispatchers[guildId] = dispatcher;
+  if(!guildsStates[guildId]) guildsStates[guildId] = {};
+  guildsStates[guildId].dispatcher = dispatcher;
+  guildsStates[guildId].status = "playing";
   
 } 
+
+const resumeTrackInGuild = (guildId) => {
+  if(!guildsStates[guildId] || !guildsStates[guildId].dispatcher) return false;
+
+  guildsStates[guildId].dispatcher.resume();
+  guildsStates[guildId].status = "playing";
+  return guildsStates[guildId].dispatcher.streamTime/1000;
+}
+
+const pauseTrackInGuild = (guildId) => {
+  if(!guildsStates[guildId] || !guildsStates[guildId].dispatcher) return false;
+
+  guildsStates[guildId].dispatcher.pause();
+  guildsStates[guildId].status = "paused";
+  return guildsStates[guildId].dispatcher.streamTime/1000;
+}
+
+const getGuildState = (guildId) => {
+  const guildState = guildsStates[guildId]
+  if(!guildState) return false;
+  return {
+    track: guildState.dispatcher && guildState.dispatcher.track,
+    state: {
+      status: guildState.status,
+      currentTime: guildState.dispatcher && guildState.dispatcher.streamTime/1000
+    }
+  };
+}
+
+const getConnectedChannel = (guildId) => {
+  const guildState = guildsStates[guildId]
+  return guildState && guildState.connection && guildState.connection.channel.id;
+}
 
 module.exports = {
   client,
   getAllGuildsFormatted,
   getVoiceChannelsFromGuild,
   joinVoiceChannelFromId,
-  playTrackInGuild
+  playTrackInGuild,
+  resumeTrackInGuild,
+  pauseTrackInGuild,
+  getGuildState,
+  getConnectedChannel
 };

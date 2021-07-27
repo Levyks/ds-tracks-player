@@ -1,4 +1,4 @@
-const getDB = (type) => {
+const getDB = (type = process.env.DB_TYPE) => {
   let db;
   switch(type) {
     case 'json':

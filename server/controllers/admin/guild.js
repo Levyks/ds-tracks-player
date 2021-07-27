@@ -42,7 +42,13 @@ router.post('/:guildId/add-track', (req, res) => {
     const tracksKeys = Object.keys(guild.tracks);
     const id = (parseInt(tracksKeys[tracksKeys.length-1]) + 1).toString();
 
-    req.body.duration = await trackFetcher.fetchTrackDuration(req.body.url);
+    const {duration, filepath} = await trackFetcher.fetchTrackDuration(req.body.url, guild.id, id);
+    req.body.duration = duration;
+
+    if(process.env.CACHE_TRACKS == 'true') {
+      req.body.filepath = filepath;
+    }
+
     if(!req.body.duration) return res.status(400).json({message: "Invalid track url"});
 
     guild.tracks[id] = req.body;
@@ -62,7 +68,13 @@ router.put('/:guildId/update-track/:trackId', (req, res) => {
     if(!guild.tracks[req.params.trackId]) return res.status(404).json({message: "Track not found"});
     
     if(guild.tracks[req.params.trackId].url !== req.body.url || !guild.tracks[req.params.trackId].duration) {
-      req.body.duration = await trackFetcher.fetchTrackDuration(req.body.url);
+      const {duration, filepath} = await trackFetcher.fetchTrackDuration(req.body.url, guild.id, req.params.trackId);
+      req.body.duration = duration;
+
+      if(process.env.CACHE_TRACKS == 'true') {
+        req.body.filepath = filepath;
+      }
+
       if(!req.body.duration) return res.status(400).json({message: "Invalid track url"});
     }
 
