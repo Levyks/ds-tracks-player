@@ -9,7 +9,13 @@
   let isLoading = true;
   let guild;
   let voiceChannels = [];
+  let searchString;
   let connectedChannel;
+  let filteredTracks;
+
+  $: {
+    if(!isLoading) filteredTracks = guild.tracks.filter(e => (!searchString) || e.name.toLowerCase().includes(searchString.toLowerCase()));
+  }
 
   socket = io();
 
@@ -32,7 +38,6 @@
   axios.get(`${__app['env'].API_URL}/guild/get`).then(response => {
     guild = response.data;
     guild.tracks = Object.values(guild.tracks);
-    console.log(guild.tracks);
     isLoading = false;
 
   }).catch(error => { 
@@ -100,13 +105,13 @@
       </div>
     </div>
     <div class="input-group rounded my-3">
-      <input type="search" class="form-control rounded" placeholder="Search" aria-label="Search"/>
+      <input type="search" class="form-control rounded" placeholder="Search" aria-label="Search" bind:value={searchString}/>
       <span class="input-group-text border-0">
         <i class="fas fa-search"></i>
       </span>
     </div>
     <ul class="list-group">
-      {#each guild.tracks as track, index}
+      {#each filteredTracks as track, index}
         <li class="list-group-item">
           <strong>{track.name}</strong>
           <div>
@@ -162,5 +167,6 @@
 
   .jumbotron {
     padding-top: 32px;
+    margin-bottom: 128px;
   }
 </style>

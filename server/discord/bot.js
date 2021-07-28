@@ -5,6 +5,8 @@ const Guild = require('../models/Guild');
 const client = new Discord.Client();
 client.login(process.env.DS_BOT_TOKEN);
 
+const DEFAULT_VOLUME = 1;
+
 const getAllGuildsFormatted = () => {
   const guildsFormatted = [];
 
@@ -60,7 +62,9 @@ const playTrackInGuild = (track, guildId, onStart = () => {}, onFinish = () => {
 
   if(!guildsStates[guildId] || !guildsStates[guildId].connection) return false;
 
-  const dispatcher = guildsStates[guildId].connection.play(track.filepath || track.url);
+  const volume = guildsStates[guildId].volume || DEFAULT_VOLUME;
+
+  const dispatcher = guildsStates[guildId].connection.play(track.filepath || track.url, {volume});
   
   dispatcher.track = track;
   dispatcher.guildId = guildId;
@@ -103,7 +107,7 @@ const getGuildState = (guildId) => {
     track: guildState.dispatcher && guildState.dispatcher.track,
     state: {
       status: guildState.status,
-      currentTime: guildState.dispatcher && guildState.dispatcher.streamTime/1000
+      currentTime: guildState.dispatcher && guildState.dispatcher.streamTime/1000 
     }
   };
 }
@@ -111,6 +115,20 @@ const getGuildState = (guildId) => {
 const getConnectedChannel = (guildId) => {
   const guildState = guildsStates[guildId]
   return guildState && guildState.connection && guildState.connection.channel.id;
+}
+
+const setBotVolume = (guildId, volume) => {
+  if(!guildsStates[guildId]) guildsStates[guildId] = {};
+  volume = volume/100;
+  guildsStates[guildId].volume = volume;
+  if(guildsStates[guildId].dispatcher){
+    guildsStates[guildId].dispatcher.setVolume(volume);
+  }
+}
+
+const getBotVolume = (guildId) => {
+  if(!guildsStates[guildId]) return false;
+  return guildsStates[guildId].volume * 100;
 }
 
 module.exports = {
@@ -122,5 +140,7 @@ module.exports = {
   resumeTrackInGuild,
   pauseTrackInGuild,
   getGuildState,
-  getConnectedChannel
+  getConnectedChannel,
+  getBotVolume,
+  setBotVolume
 };

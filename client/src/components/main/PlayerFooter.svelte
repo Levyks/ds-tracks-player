@@ -4,6 +4,7 @@
   let track;
   let trackState;
   let currentTime;
+  let volume = 100;
   let progressBar;
   let trackDurationTimer;
 
@@ -18,6 +19,10 @@
       clearInterval(trackDurationTimer);
     } 
     trackState = data.state; 
+  });
+  
+  socket.on('volumeSync', newVolume => {
+    volume = newVolume
   });
 
   function handleTrackStateChange(newTrackState) {
@@ -61,6 +66,10 @@
   function handlePauseClick() {
     socket.emit('pauseTrack');
   }
+
+  function handleVolumeChange() {
+    socket.emit('setVolume', volume);
+  }
   
 
 </script>
@@ -97,7 +106,7 @@
       {/if}
     </div>
     <div class="right-section">
-  
+      <input type="range" min="0" max="200" class="volume-slider" bind:value={volume} on:change={handleVolumeChange}>
     </div>
   </div>
 </nav>
@@ -122,6 +131,10 @@
     border-radius: 50%;
 
     text-align: center;
+  }
+
+  .volume-slider {
+    width: 75%;
   }
 
   .pause-btn {

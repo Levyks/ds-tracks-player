@@ -17,7 +17,7 @@ router.post('/login', (req, res) => {
       return res
       .cookie('jwt-admin-token', admin.generateJwt(), {
           httpOnly: true, 
-          maxAge: 3600 * 1000
+          maxAge: 6 * 3600 * 1000
         })
       .json({ auth: true });
     });

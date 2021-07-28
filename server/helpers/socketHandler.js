@@ -45,19 +45,22 @@ const createIo = (httpServer) => {
         socket.emit('connectResponse', {status: 200});
         socket.emit('trackPlayingSync', DsBot.getGuildState(socket.guildId));
         socket.emit('connectedChannelSync', DsBot.getConnectedChannel(socket.guildId));
+        socket.emit('volumeSync', DsBot.getBotVolume(socket.guildId));
 
         socket.on('playTrack', playTrack);
         socket.on('resumeTrack', resumeTrack);
         socket.on('pauseTrack', pauseTrack);
+        socket.on('setVolume', setVolume);
         socket.on('joinVc', joinVc);
 
       });
 
     } catch (err) {
-      console.log(err);
       if(err.status) {
         socket.emit('connectResponse', err);
         socket.disconnect();
+      } else {
+        console.log(err);
       }
     }
   });
@@ -93,10 +96,15 @@ function handleTrackFinish() {
   io.in(this.guildId).emit('trackPlayingSync', {state: {status: "finished", currentTime: 0}});
 }
 
+function setVolume(volume) {
+  volume = Math.min(volume, 200);
+  DsBot.setBotVolume(this.guildId, volume);
+  io.in(this.guildId).emit('volumeSync', volume);
+}
+
 function joinVc(data) {
   if(!data.id) return;
   DsBot.joinVoiceChannelFromId(data.id, this.guildId).then(result => {
-    console.log(result);
     if(result) io.in(this.guildId).emit('connectedChannelSync', data.id);
   });
 }

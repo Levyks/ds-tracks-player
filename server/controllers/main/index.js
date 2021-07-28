@@ -12,6 +12,13 @@ router.use('/auth', Auth);
 router.get('/guild/get', isAuthenticatedGuild, (req, res) => {  
   GuildModel.findFromId(req.guildId).then(guild => {
     if(!guild) return res.status(404).json({message: "Guild not found"});
+
+    guild = Object.assign({}, guild);
+
+    Object.keys(guild.tracks).forEach(key => {
+      if(!guild.tracks[key].available) delete guild.tracks[key];
+    });
+
     res.json(guild);
   });
 });
